@@ -1,0 +1,8 @@
+S -> A $
+A -> x A x
+A -> C
+B -> y B y
+B -> C
+C -> z B z
+C -> w A w
+C -> epsilon

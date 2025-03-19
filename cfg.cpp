@@ -104,22 +104,32 @@ CFGProcessor::CFGProcessor(const string& filename, const string& outputFilename)
             while (symbolStream >> symbol) {
                 symbols.push_back(symbol);
                 
-                // If the symbol is not a non-terminal and not epsilon, it's a terminal
-                if (symbol != "epsilon" && (symbol.length() > 1 || !isupper(symbol[0]))) {
-                    grammar.terminals.insert(symbol);
-                }
+                // We'll determine terminals after all non-terminals are known
             }
             
             // Handle the empty alternative (epsilon)
             if (symbols.empty()) {
                 symbols.push_back("epsilon");
-                grammar.terminals.insert("epsilon");
             }
             
             grammar.productions[lhs].push_back(symbols);
         }
     }
     file.close();
+    
+    // Now determine terminals after all non-terminals are identified
+    grammar.terminals.insert("epsilon");
+    
+    // Process all symbols in productions to identify terminals
+    for (const auto& entry : grammar.productions) {
+        for (const auto& prod : entry.second) {
+            for (const auto& symbol : prod) {
+                if (symbol != "epsilon" && grammar.nonTerminals.find(symbol) == grammar.nonTerminals.end()) {
+                    grammar.terminals.insert(symbol);
+                }
+            }
+        }
+    }
 }
 
 // Destructor to close the output file
@@ -165,7 +175,6 @@ void CFGProcessor::displayGrammar(const Grammar& g) {
 
 // Perform left factoring on the grammar
 void CFGProcessor::performLeftFactoring() {
-    // Same as original code
     Grammar newGrammar = grammar;
     bool factored = false;
     
@@ -237,7 +246,6 @@ void CFGProcessor::performLeftFactoring() {
 
 // Eliminate left recursion from the grammar
 void CFGProcessor::eliminateLeftRecursion() {
-    // Same as original code
     Grammar newGrammar = grammar;
     newGrammar.productions.clear();
     
@@ -329,7 +337,6 @@ void CFGProcessor::eliminateLeftRecursion() {
 
 // Compute FIRST set for a string of symbols
 set<string> CFGProcessor::computeFirstOfString(const vector<string>& symbols) {
-    // Same as original code
     set<string> firstSet;
     
     if (symbols.empty()) {
@@ -380,7 +387,6 @@ set<string> CFGProcessor::computeFirstOfString(const vector<string>& symbols) {
 
 // Compute FIRST sets for all non-terminals
 void CFGProcessor::computeFirstSets() {
-    // Same algorithm, but writing to file as well
     // Initialize all FIRST sets as empty
     for (const auto& nt : grammar.nonTerminals) {
         firstSets[nt] = set<string>();
@@ -447,14 +453,13 @@ void CFGProcessor::computeFirstSets() {
 
 // Compute FOLLOW sets for all non-terminals
 void CFGProcessor::computeFollowSets() {
-    // Same algorithm with file output
     // Initialize all FOLLOW sets as empty
     for (const auto& nt : grammar.nonTerminals) {
         followSets[nt] = set<string>();
     }
     
-    // Add $ to FOLLOW(start symbol)
-    followSets[grammar.startSymbol].insert("$");
+    // Remove the line that adds $ to FOLLOW(start symbol)
+    // followSets[grammar.startSymbol].insert("$");
     
     bool changed;
     do {
@@ -567,7 +572,8 @@ void CFGProcessor::constructParseTable() {
     for (const auto& term : grammar.terminals) {
         if (term != "epsilon") tableTerminals.insert(term);
     }
-    tableTerminals.insert("$"); // Add end marker
+    // Remove the line that adds $ to tableTerminals
+    // tableTerminals.insert("$"); // Add end marker
     
     // Print the table header with terminals as columns
     const int colWidth = 15;
@@ -638,7 +644,6 @@ void CFGProcessor::constructParseTable() {
         outputFile << endl;
     }
 }
-
 // Display all results of the CFG processing
 void CFGProcessor::displayResults() {
     cout << "Original Grammar:" << endl;
