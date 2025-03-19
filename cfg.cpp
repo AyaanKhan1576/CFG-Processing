@@ -458,8 +458,8 @@ void CFGProcessor::computeFollowSets() {
         followSets[nt] = set<string>();
     }
     
-    // Add $ to FOLLOW(start symbol)
-    followSets[grammar.startSymbol].insert("$");
+    // Remove the line that adds $ to FOLLOW(start symbol)
+    // followSets[grammar.startSymbol].insert("$");
     
     bool changed;
     do {
@@ -572,7 +572,8 @@ void CFGProcessor::constructParseTable() {
     for (const auto& term : grammar.terminals) {
         if (term != "epsilon") tableTerminals.insert(term);
     }
-    tableTerminals.insert("$"); // Add end marker
+    // Remove the line that adds $ to tableTerminals
+    // tableTerminals.insert("$"); // Add end marker
     
     // Print the table header with terminals as columns
     const int colWidth = 15;
@@ -643,7 +644,6 @@ void CFGProcessor::constructParseTable() {
         outputFile << endl;
     }
 }
-
 // Display all results of the CFG processing
 void CFGProcessor::displayResults() {
     cout << "Original Grammar:" << endl;
