@@ -29,7 +29,7 @@ FOLLOW Sets:
 FOLLOW(A) = { w, x }
 FOLLOW(B) = { y, z }
 FOLLOW(C) = { $, w, x, y, z }
-FOLLOW(S) = {  }
+FOLLOW(S) = { $ }
 
 LL(1) Parsing Table:
 +---------------+---------------+---------------+---------------+---------------+---------------+
