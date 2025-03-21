@@ -1,0 +1,5 @@
+S -> W
+W -> Z X Y | X Y
+Y -> c | epsilon
+Z -> a | d
+X -> X b | epsilon
