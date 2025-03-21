@@ -1,0 +1,10 @@
+E -> E + T | T | b
+T -> T * F | F | T id
+F -> ( E ) | id | ( F 
+
+A -> A + A  | A * A  | int 
+B -> B - B  | float 
+
+A1 -> A2 A3 
+A2 -> A3 A1  | b 
+A3 -> A1 A1  | a 

@@ -7,85 +7,54 @@
 #include <sstream>
 #include <algorithm>
 #include <iomanip>
-
 using namespace std;
 
-// This holds a single production rule like A -> a b C
 struct Production {
-    string lhs;                // The left side (like "A")
-    vector<string> rhs;        // The right side (like {"a", "b", "C"})
+    string lhs;                
+    vector<string> rhs;        
 };
 
-// This represents our entire grammar with all its parts
 struct Grammar {
-    set<string> terminals;     // Terminal symbols (lowercase usually)
-    set<string> nonTerminals;  // Non-terminal symbols (uppercase usually)
+    set<string> terminals;     
+    set<string> nonTerminals;  
     map<string, vector<vector<string>>> productions; // Maps each non-terminal to its production rules
-    string startSymbol;        // The starting symbol for the grammar
+    string startSymbol;        
 };
 
-// This class does all the work with the grammar
 class CFGProcessor {
 private:
     Grammar grammar;
-    map<string, set<string>> firstSets;    // FIRST sets for each symbol
-    map<string, set<string>> followSets;   // FOLLOW sets for each non-terminal
-    map<pair<string, string>, vector<string>> parseTable;  // The LL(1) parsing table
-    
-    // Checks if a symbol is a terminal (like "a", "b", "if", etc.)
+    map<string, set<string>> firstSets;    
+    map<string, set<string>> followSets;   
+    map<pair<string, string>, vector<string>> parseTable;
     bool isTerminal(const string& symbol);
-    
-    // Checks if a symbol is a non-terminal (like "A", "Expr", "Statement", etc.)
     bool isNonTerminal(const string& symbol);
-    
-    // Figures out the FIRST set for a sequence of symbols
     set<string> computeFirstOfString(const vector<string>& symbols);
-    
-    // Our file for saving the output
     ofstream outputFile;
 
 public:
-    // Creates the processor by reading grammar from a file
     CFGProcessor(const string& filename, const string& outputFilename);
-    
-    // Cleans up when we're done
     ~CFGProcessor();
-    
-    // Shows the grammar in a readable format
     void displayGrammar(const Grammar& g);
-    
-    // Applies left factoring to eliminate common prefixes
     void performLeftFactoring();
-    
-    // Gets rid of left recursion which would break our parser
     void eliminateLeftRecursion();
-    
-    // Computes FIRST sets for all symbols
     void computeFirstSets();
-    
-    // Computes FOLLOW sets for all non-terminals
     void computeFollowSets();
-    
-    // Builds the LL(1) parsing table
     void constructParseTable();
-    
-    // Shows all results from processing the grammar
     void displayResults();
 };
 
 // Opens input and output files and reads the grammar
 CFGProcessor::CFGProcessor(const string& filename, const string& outputFilename) {
-    // Try to open our output file
     outputFile.open(outputFilename);
     if (!outputFile.is_open()) {
-        cerr << "Shoot, couldn't open the output file: " << outputFilename << endl;
+        cerr << "Couldn't open the output file: " << outputFilename << endl;
         exit(1);
     }
 
-    // Now try to open the input file with the grammar
     ifstream file(filename);
     if (!file.is_open()) {
-        cerr << "Hmm, having trouble opening the grammar file: " << filename << endl;
+        cerr << "Error opening file: " << filename << endl;
         outputFile.close();
         exit(1);
     }
@@ -93,7 +62,6 @@ CFGProcessor::CFGProcessor(const string& filename, const string& outputFilename)
     // Read the grammar line by line
     string line;
     while (getline(file, line)) {
-        // Skip empty lines and comments
         if (line.empty() || line[0] == '#') continue;
 
         // Find the arrow that separates LHS from RHS
@@ -109,10 +77,8 @@ CFGProcessor::CFGProcessor(const string& filename, const string& outputFilename)
         rhs.erase(0, rhs.find_first_not_of(" \t"));
         rhs.erase(rhs.find_last_not_of(" \t") + 1);
 
-        // Add this non-terminal to our set
         grammar.nonTerminals.insert(lhs);
 
-        // If this is our first production, use it as the start symbol
         if (grammar.startSymbol.empty()) {
             grammar.startSymbol = lhs;
         }
@@ -121,7 +87,6 @@ CFGProcessor::CFGProcessor(const string& filename, const string& outputFilename)
         istringstream rhsStream(rhs);
         string alternative;
         while (getline(rhsStream, alternative, '|')) {
-            // Clean up spaces again
             alternative.erase(0, alternative.find_first_not_of(" \t"));
             alternative.erase(alternative.find_last_not_of(" \t") + 1);
 
@@ -131,21 +96,17 @@ CFGProcessor::CFGProcessor(const string& filename, const string& outputFilename)
             string symbol;
             while (symbolStream >> symbol) {
                 symbols.push_back(symbol);
-                // We'll figure out which symbols are terminals later
             }
             
-            // If there's nothing on the right, it's an epsilon production
             if (symbols.empty()) {
                 symbols.push_back("epsilon");
             }
             
-            // Add this production to our grammar
             grammar.productions[lhs].push_back(symbols);
         }
     }
     file.close();
     
-    // Now that we know all the non-terminals, we can identify terminals
     grammar.terminals.insert("epsilon");
     
     // Any symbol that's not a non-terminal must be a terminal
@@ -162,41 +123,35 @@ CFGProcessor::CFGProcessor(const string& filename, const string& outputFilename)
     }
 }
 
-// Close the output file when we're done
 CFGProcessor::~CFGProcessor() {
     if (outputFile.is_open()) {
         outputFile.close();
     }
 }
 
-// Checks if a symbol is a terminal
 bool CFGProcessor::isTerminal(const string& symbol) {
     return grammar.terminals.find(symbol) != grammar.terminals.end();
 }
 
-// Checks if a symbol is a non-terminal
 bool CFGProcessor::isNonTerminal(const string& symbol) {
     return grammar.nonTerminals.find(symbol) != grammar.nonTerminals.end();
 }
 
-// Show the grammar in a readable format
+// Show the grammar 
 void CFGProcessor::displayGrammar(const Grammar& g) {
     cout << "Grammar:" << endl;
     outputFile << "Grammar:" << endl;
     
-    // Go through each production rule
     for (const auto& entry : g.productions) {
         cout << entry.first << " -> ";
         outputFile << entry.first << " -> ";
         
-        // Print each alternative with | between them
         for (int i = 0; i < entry.second.size(); i++) {
             if (i > 0) {
                 cout << " | ";
                 outputFile << " | ";
             }
             
-            // Print each symbol in this alternative
             for (int j = 0; j < entry.second[i].size(); j++) {
                 cout << entry.second[i][j] << " ";
                 outputFile << entry.second[i][j] << " ";
@@ -214,7 +169,6 @@ void CFGProcessor::performLeftFactoring() {
     Grammar newGrammar = grammar;
     bool factored = false;
     
-    // Keep factoring until we can't anymore
     do {
         factored = false;
         Grammar tempGrammar = newGrammar;
@@ -265,7 +219,6 @@ void CFGProcessor::performLeftFactoring() {
                             newProd.push_back("epsilon");
                         }
                         
-                        // Add this to our new non-terminal's productions
                         newGrammar.productions[newNonTerminal].push_back(newProd);
                     }
                 } else {
@@ -283,7 +236,6 @@ void CFGProcessor::performLeftFactoring() {
         }
     } while (factored);
     
-    // Update our grammar and show the results
     grammar = newGrammar;
     cout << "Grammar after Left Factoring:" << endl;
     outputFile << "Grammar after Left Factoring:" << endl;
@@ -292,16 +244,13 @@ void CFGProcessor::performLeftFactoring() {
 
 // Eliminate left recursion (both direct and indirect)
 void CFGProcessor::eliminateLeftRecursion() {
-    // Get a list of all the non-terminals in order
     vector<string> origNonTerminals;
     for (const auto& entry : grammar.productions) {
         origNonTerminals.push_back(entry.first);
     }
     
-    // Make a working copy of the grammar
     map<string, vector<vector<string>>> newProds = grammar.productions;
     
-    // Process each non-terminal in order
     for (int i = 0; i < origNonTerminals.size(); i++) {
         string Ai = origNonTerminals[i];
         
@@ -344,9 +293,9 @@ void CFGProcessor::eliminateLeftRecursion() {
             newProds[Ai] = updated;
         }
         
-        // Now eliminate direct left recursion
-        vector<vector<string>> alpha; // Productions that start with Ai
-        vector<vector<string>> beta;  // Productions that don't start with Ai
+        // Eliminate direct left recursion
+        vector<vector<string>> alpha; 
+        vector<vector<string>> beta;  
         
         for (int j = 0; j < newProds[Ai].size(); j++) {
             const vector<string>& production = newProds[Ai][j];
@@ -356,14 +305,12 @@ void CFGProcessor::eliminateLeftRecursion() {
                 vector<string> alphaPart(production.begin() + 1, production.end());
                 alpha.push_back(alphaPart);
             } else {
-                // This is a beta production (doesn't start with Ai)
                 beta.push_back(production);
             }
         }
         
         // If we found left recursion, eliminate it
         if (!alpha.empty()) {
-            // Choose a good name for the new non-terminal
             string candidate = Ai + "'";
             if (grammar.nonTerminals.find(candidate) != grammar.nonTerminals.end()) {
                 candidate = Ai + "''";
@@ -394,7 +341,6 @@ void CFGProcessor::eliminateLeftRecursion() {
         }
     }
     
-    // Update our grammar and show the results
     grammar.productions = newProds;
     
     cout << "Grammar after Left Recursion Elimination:" << endl;
@@ -415,11 +361,9 @@ set<string> CFGProcessor::computeFirstOfString(const vector<string>& symbols) {
     // Assume all symbols can derive epsilon until proven otherwise
     bool allHaveEpsilon = true;
     
-    // Check each symbol in the sequence
     for (int i = 0; i < symbols.size(); i++) {
         string currentSymbol = symbols[i];
         
-        // Skip epsilon symbols
         if (currentSymbol == "epsilon") {
             continue;
         }
@@ -447,8 +391,6 @@ set<string> CFGProcessor::computeFirstOfString(const vector<string>& symbols) {
                 allHaveEpsilon = false;
                 break;
             }
-            
-            // Otherwise, continue to the next symbol
         }
     }
     
@@ -462,22 +404,18 @@ set<string> CFGProcessor::computeFirstOfString(const vector<string>& symbols) {
 
 // Compute FIRST sets for all symbols in the grammar
 void CFGProcessor::computeFirstSets() {
-    // Start with empty FIRST sets for non-terminals
     for (const auto& nt : grammar.nonTerminals) {
         firstSets[nt] = set<string>();
     }
     
-    // For terminals, FIRST is just the terminal itself
     for (const auto& t : grammar.terminals) {
         firstSets[t] = {t};
     }
     
-    // Keep computing until nothing changes
     bool changed;
     do {
         changed = false;
         
-        // Check each production rule
         for (const auto& entry : grammar.productions) {
             string nonTerminal = entry.first;
             
@@ -486,7 +424,6 @@ void CFGProcessor::computeFirstSets() {
                 
                 // Special case for epsilon productions
                 if (production.size() == 1 && production[0] == "epsilon") {
-                    // Add epsilon to FIRST(nonTerminal) if it's not already there
                     if (firstSets[nonTerminal].find("epsilon") == firstSets[nonTerminal].end()) {
                         firstSets[nonTerminal].insert("epsilon");
                         changed = true;
@@ -551,15 +488,12 @@ void CFGProcessor::computeFirstSets() {
 
 // Compute FOLLOW sets for all non-terminals
 void CFGProcessor::computeFollowSets() {
-    // Start with empty FOLLOW sets
     for (const auto& nt : grammar.nonTerminals) {
         followSets[nt] = set<string>();
     }
     
-    // Add $ to FOLLOW(start symbol)
     followSets[grammar.startSymbol].insert("$");
     
-    // Keep computing until nothing changes
     bool changed;
     do {
         changed = false;
@@ -641,7 +575,6 @@ void CFGProcessor::computeFollowSets() {
 void CFGProcessor::constructParseTable() {
     parseTable.clear();
     
-    // For each production A -> α in the grammar
     for (const auto& entry : grammar.productions) {
         string nonTerminal = entry.first;
         
@@ -651,14 +584,12 @@ void CFGProcessor::constructParseTable() {
             // Compute FIRST(α)
             set<string> firstAlpha = computeFirstOfString(production);
             
-            // For each terminal 'a' in FIRST(α), add A -> α to M[A, a]
             for (const auto& terminal : firstAlpha) {
                 if (terminal != "epsilon") {
                     parseTable[{nonTerminal, terminal}] = production;
                 }
             }
             
-            // If epsilon is in FIRST(α), for each 'b' in FOLLOW(A), add A -> α to M[A, b]
             if (firstAlpha.find("epsilon") != firstAlpha.end()) {
                 for (const auto& terminal : followSets[nonTerminal]) {
                     parseTable[{nonTerminal, terminal}] = production;
@@ -667,21 +598,17 @@ void CFGProcessor::constructParseTable() {
         }
     }
     
-    // Show the parsing table
     cout << "LL(1) Parsing Table:" << endl;
     outputFile << "LL(1) Parsing Table:" << endl;
     
-    // Get all terminals (except epsilon) for the table columns
     set<string> tableTerminals;
     for (const auto& term : grammar.terminals) {
         if (term != "epsilon") tableTerminals.insert(term);
     }
-    tableTerminals.insert("$"); // Add the end marker
+    tableTerminals.insert("$"); 
     
-    // Set up the table formatting
     const int colWidth = 15;
     
-    // Print the top border
     cout << "+";
     outputFile << "+";
     cout << string(colWidth, '-') << "+";
@@ -693,7 +620,6 @@ void CFGProcessor::constructParseTable() {
     cout << endl;
     outputFile << endl;
     
-    // Print the column headers
     cout << "|" << setw(colWidth) << "  " << "|";
     outputFile << "|" << setw(colWidth) << "  " << "|";
     for (const auto& term : tableTerminals) {
@@ -703,7 +629,6 @@ void CFGProcessor::constructParseTable() {
     cout << endl;
     outputFile << endl;
     
-    // Print a divider
     cout << "+";
     outputFile << "+";
     cout << string(colWidth, '-') << "+";
@@ -715,12 +640,10 @@ void CFGProcessor::constructParseTable() {
     cout << endl;
     outputFile << endl;
     
-    // Print each row of the table
     for (const auto& nt : grammar.nonTerminals) {
         cout << "|" << setw(colWidth) << nt << "|";
         outputFile << "|" << setw(colWidth) << nt << "|";
         
-        // Print each cell in this row
         for (const auto& term : tableTerminals) {
             string cellContent = "";
             if (parseTable.find({nt, term}) != parseTable.end()) {
@@ -735,7 +658,6 @@ void CFGProcessor::constructParseTable() {
         cout << endl;
         outputFile << endl;
         
-        // Print a divider after each row
         cout << "+";
         outputFile << "+";
         cout << string(colWidth, '-') << "+";
@@ -749,7 +671,7 @@ void CFGProcessor::constructParseTable() {
     }
 }
 
-// Show all the results from processing the grammar
+//DISPLAY
 void CFGProcessor::displayResults() {
     cout << "Original Grammar:" << endl;
     outputFile << "Original Grammar:" << endl;
@@ -762,7 +684,6 @@ void CFGProcessor::displayResults() {
     constructParseTable();
 }
 
-// Main program entry point
 int main(int argc, char* argv[]) {
     if (argc != 3) {
         cerr << "Hey, I need both input and output files! Use: " << argv[0] << " grammar.txt output.txt" << endl;
