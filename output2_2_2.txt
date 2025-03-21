@@ -1,0 +1,45 @@
+Original Grammar:
+Grammar:
+A -> x A x  | C 
+B -> y B y  | C 
+C -> z B z  | w A w  | epsilon 
+S -> A $ 
+
+Grammar after Left Factoring:
+Grammar:
+A -> x A x  | C 
+B -> y B y  | C 
+C -> z B z  | w A w  | epsilon 
+S -> A $ 
+
+Grammar after Left Recursion Elimination:
+Grammar:
+A -> x A x  | C 
+B -> y B y  | C 
+C -> z B z  | w A w  | epsilon 
+S -> x A x $  | z B z $  | w A w $  | epsilon $ 
+
+FIRST Sets:
+FIRST(A) = { epsilon, w, x, z }
+FIRST(B) = { epsilon, w, y, z }
+FIRST(C) = { epsilon, w, z }
+FIRST(S) = { $, w, x, z }
+
+FOLLOW Sets:
+FOLLOW(A) = { w, x }
+FOLLOW(B) = { y, z }
+FOLLOW(C) = { w, x, y, z }
+FOLLOW(S) = { $ }
+
+LL(1) Parsing Table:
++---------------+---------------+---------------+---------------+---------------+---------------+
+|               |              $|              w|              x|              y|              z|
++---------------+---------------+---------------+---------------+---------------+---------------+
+|              A|               |        A -> C |        A -> C |               |        A -> C |
++---------------+---------------+---------------+---------------+---------------+---------------+
+|              B|               |        B -> C |               |        B -> C |        B -> C |
++---------------+---------------+---------------+---------------+---------------+---------------+
+|              C|               |  C -> epsilon |  C -> epsilon |  C -> epsilon |  C -> epsilon |
++---------------+---------------+---------------+---------------+---------------+---------------+
+|              S|S -> epsilon $ |  S -> w A w $ |  S -> x A x $ |               |  S -> z B z $ |
++---------------+---------------+---------------+---------------+---------------+---------------+
