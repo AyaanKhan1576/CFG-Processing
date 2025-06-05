@@ -1,0 +1,31 @@
+Original Grammar:
+Grammar:
+A -> a  | epsilon 
+S -> A A 
+
+Grammar after Left Factoring:
+Grammar:
+A -> a  | epsilon 
+S -> A A 
+
+Grammar after Left Recursion Elimination:
+Grammar:
+A -> a  | epsilon 
+S -> a A  | epsilon A 
+
+FIRST Sets:
+FIRST(A) = { a, epsilon }
+FIRST(S) = { a, epsilon }
+
+FOLLOW Sets:
+FOLLOW(A) = { $ }
+FOLLOW(S) = { $ }
+
+LL(1) Parsing Table:
++---------------+---------------+---------------+
+|               |              $|              a|
++---------------+---------------+---------------+
+|              A|  A -> epsilon |        A -> a |
++---------------+---------------+---------------+
+|              S|S -> epsilon A |S -> epsilon A |
++---------------+---------------+---------------+
